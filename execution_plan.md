@@ -702,6 +702,10 @@ class ValuationResult:
 
 ### 5.2 Create `app/report_generator.py`
 
+> **Implementation note (2026-04-29):** This section was implemented as a fully **deterministic, template-based generator** instead of an LLM call. The original plan called for Claude API here, but we pivoted to avoid the API dependency and per-report cost. All outputs (verdict, risk flags, desirability factors, seller questions, markdown narrative) are derived from the structured valuation data using rule-based logic.
+>
+> The LLM approach can be revisited later as an optional enhancement — a lightweight prompt that receives the same structured context and returns a richer narrative. When we do, it should be a drop-in replacement for `generate()` with an A/B toggle, not a rewrite of the pipeline.
+
 #### Input
 
 ```python
@@ -724,32 +728,13 @@ class ReportOutput:
     report_markdown: str
 ```
 
-#### LLM prompt design (critical rules)
+#### Deterministic logic
 
-The LLM receives only structured facts. It must not invent prices, comps, or risk flags not present in the data.
-
-Build a system prompt that instructs the model:
-- You are a Porsche 911 buying assistant
-- You are given structured data about a listing and its comps
-- Generate a buyer report with: verdict (one phrase), desirability factors (bullet list), risk flags (bullet list), questions to ask the seller (bullet list), and a deal advice paragraph
-- Do not invent any prices, mileage figures, or facts not present in the data provided
-- If data is sparse, say so honestly and lower confidence tone accordingly
-- Output must be valid JSON with keys: verdict, desirability_factors, risk_flags, seller_questions, report_markdown
-
-The user message must include:
-- Target listing fields (year, generation, trim, body_style, transmission, mileage, asking_price, exterior_color, seller_type, location, title_status, accident_reported, options, modifications, risk_signals)
-- Valuation result (estimated_market_low/high, recommended_offer_low/high, confidence_level, confidence_reason, sold_comp_count, active_asking_count)
-- Top 5 comp summaries (year, generation, trim, transmission, mileage, sold_price or asking_price, source, date_sold or date_seen)
-
-Do not pass raw HTML or raw listing text to the LLM.
-
-#### Implementation
-
-1. Build the structured context dict from `ReportInput`
-2. Serialize to a clean JSON string
-3. Call Anthropic API with `model="claude-opus-4-7"`, structured JSON output
-4. Parse response, validate required keys are present
-5. Return `ReportOutput`
+- **verdict**: derived from `asking_price` vs `estimated_market_low/high` thresholds (e.g. asking < low * 0.95 → "Strong value", asking > high * 1.15 → "Significantly overpriced")
+- **risk_flags**: from `accident_reported`, `title_status`, `owner_count`, `mileage`, `modifications`, `seller_type`, and confidence level
+- **desirability_factors**: from `transmission == MANUAL`, `cpo`, low mileage, clean title, notable options (Sport Chrono, PCCB, PTS, etc.), GT/Turbo trim
+- **seller_questions**: triggered by missing data, accidents, modifications, high mileage, manual transmission, and low confidence
+- **report_markdown**: Python f-string template assembling all sections (Summary, Market Context, Comps Used, Desirability, Risk Flags, Deal Advice)
 
 ### 5.3 Add `POST /api/reports/generate` route
 
@@ -965,28 +950,9 @@ Run: `uv run python scripts/ingest_bat.py < bat_urls.txt`
 
 ## Piece 8 — Cars and Bids Scraper
 
-**Goal:** Same as Piece 7 but for Cars and Bids.
-
-### 8.1 Create `app/scrapers/cnb.py`
-
-Follow the same structure as `bat.py`:
-- `User-Agent` header, 10-second timeout, restriction logging, rate limiting
-- Extract year, trim, transmission, body style, sold price or current bid, mileage, seller, location, options
-- CnB shows sold price prominently on completed auction pages — target that element
-- Run through normalizer
-- Return `ParsedListing`
-
-### 8.2 Add CnB to `registry.py`
-
-Already done in 7.1, just ensure the CnB scraper is tested.
-
-### 8.3 Add a CnB batch ingestion script
-
-Create `scripts/ingest_cnb.py` following the same pattern as `ingest_bat.py`.
-
-### Test gate
-
-Same as Piece 7 test gate applied to CnB listings. Combined with BaT output, the comp DB should now have 100+ scraped records.
+> **SKIPPED (2026-04-29):** Investigation showed that CnB does not expose sold prices or asking prices in a reliably accessible way — the OG title only gives year/trim/body/drivetrain, and sold prices are behind their data layer. A listing without a price has no value as a comp, so ingesting CnB data would add noise without improving valuation quality.
+>
+> Revisit only if a reliable method to extract CnB sold prices is found (e.g. a public API, structured JSON embed, or accessible DOM element on completed auction pages).
 
 ---
 

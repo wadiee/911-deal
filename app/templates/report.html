@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}{{ target.year }} {{ target.trim }} Report — 911 Deal Radar{% endblock %}
+{% block content %}
+
+{# Verdict banner #}
+{% set verdict_color = "bg-green-50 border-green-400 text-green-800" if "value" in report.verdict|lower or "fair" in report.verdict|lower else ("bg-red-50 border-red-400 text-red-800" if "over" in report.verdict|lower or "caution" in report.verdict|lower else "bg-yellow-50 border-yellow-400 text-yellow-800") %}
+<div class="border-l-4 {{ verdict_color }} px-6 py-4 rounded mb-8">
+    <div class="text-xs font-semibold uppercase tracking-wide mb-1">Verdict</div>
+    <div class="text-2xl font-bold">{{ report.verdict }}</div>
+    <div class="text-sm mt-1">{{ report.confidence_level }} confidence — {{ report.confidence_reason }}</div>
+</div>
+
+{# Target listing summary #}
+<div class="grid grid-cols-2 gap-6 mb-8">
+    <div class="bg-white border border-gray-200 rounded-lg p-5">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">This listing</h2>
+        <div class="text-2xl font-bold mb-1">
+            {{ target.year }} {{ target.trim }} {{ target.body_style }}
+        </div>
+        <div class="text-gray-500 text-sm mb-3">{{ target.generation }} · {{ target.transmission or "transmission unknown" }} · {{ target.mileage | default("?") | int if target.mileage else "?" }} miles</div>
+        <div class="text-3xl font-bold">${{ "{:,.0f}".format(report.asking_price | float) if report.asking_price else "N/A" }}</div>
+        <div class="text-sm text-gray-400">{{ target.location }}</div>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-lg p-5">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Market estimate</h2>
+        {% if report.estimated_low and report.estimated_high %}
+        <div class="text-sm text-gray-500 mb-1">Estimated market range</div>
+        <div class="text-2xl font-bold mb-3">
+            ${{ "{:,.0f}".format(report.estimated_low | float) }} – ${{ "{:,.0f}".format(report.estimated_high | float) }}
+        </div>
+        {% else %}
+        <div class="text-gray-400 text-sm mb-3">Insufficient comp data for market estimate</div>
+        {% endif %}
+        {% if report.recommended_offer_low and report.recommended_offer_high %}
+        <div class="text-sm text-gray-500 mb-1">Recommended offer range</div>
+        <div class="text-xl font-semibold text-blue-700">
+            ${{ "{:,.0f}".format(report.recommended_offer_low | float) }} – ${{ "{:,.0f}".format(report.recommended_offer_high | float) }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# Comp data summary #}
+<div class="grid grid-cols-2 gap-6 mb-8">
+    <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <div class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Sold comps</div>
+        {% set sold = report.sold_comp_summary %}
+        {% if sold and sold.count | int > 0 %}
+        <div class="text-xl font-bold">{{ sold.count }} found</div>
+        <div class="text-sm text-gray-500">${{ "{:,.0f}".format(sold.low | float) }} – ${{ "{:,.0f}".format(sold.high | float) }}</div>
+        {% else %}
+        <div class="text-gray-400 text-sm">No confirmed sold comps</div>
+        {% endif %}
+    </div>
+    <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <div class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Active asking comps</div>
+        {% set active = report.active_comp_summary %}
+        {% if active and active.count | int > 0 %}
+        <div class="text-xl font-bold">{{ active.count }} found</div>
+        <div class="text-sm text-gray-500">${{ "{:,.0f}".format(active.low | float) }} – ${{ "{:,.0f}".format(active.high | float) }}</div>
+        {% else %}
+        <div class="text-gray-400 text-sm">No active comps found</div>
+        {% endif %}
+    </div>
+</div>
+
+{# Desirability + Risk side by side #}
+<div class="grid grid-cols-2 gap-6 mb-8">
+    {% if report.desirability_factors and report.desirability_factors.factors %}
+    <div class="bg-white border border-gray-200 rounded-lg p-5">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Desirability factors</h2>
+        <ul class="space-y-2">
+        {% for f in report.desirability_factors.factors %}
+            <li class="flex gap-2 text-sm"><span class="text-green-500 mt-0.5">✓</span><span>{{ f }}</span></li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if report.risk_flags and report.risk_flags.flags %}
+    <div class="bg-white border border-red-200 rounded-lg p-5">
+        <h2 class="text-sm font-semibold text-red-500 uppercase tracking-wide mb-3">Risk flags</h2>
+        <ul class="space-y-2">
+        {% for f in report.risk_flags.flags %}
+            <li class="flex gap-2 text-sm"><span class="text-red-500 mt-0.5">⚠</span><span>{{ f }}</span></li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+
+{# Questions to ask #}
+{% if report.seller_questions and report.seller_questions.questions %}
+<div class="bg-white border border-gray-200 rounded-lg p-5 mb-8">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Questions to ask the seller</h2>
+    <ul class="space-y-2">
+    {% for q in report.seller_questions.questions %}
+        <li class="text-sm flex gap-2"><span class="text-gray-400">→</span><span>{{ q }}</span></li>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{# Top comps #}
+{% if comp_listings %}
+<div class="mb-8">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Comparable listings used</h2>
+    <div class="space-y-2">
+    {% for cm, comp in zip(comp_matches, comp_listings) %}
+    {% if comp %}
+    <div class="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between">
+        <div>
+            <span class="font-medium text-sm">{{ comp.year }} {{ comp.trim }} {{ comp.body_style }}</span>
+            <span class="text-gray-400 text-sm ml-2">{{ comp.mileage | int if comp.mileage else "?" }} mi · {{ comp.location }}</span>
+        </div>
+        <div class="text-right">
+            <div class="font-semibold text-sm">${{ "{:,.0f}".format((comp.sold_price or comp.asking_price) | float) if (comp.sold_price or comp.asking_price) else "N/A" }}</div>
+            <div class="text-xs text-gray-400">score {{ cm.similarity_score }}</div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# Full report markdown #}
+<div class="bg-white border border-gray-200 rounded-lg p-6 prose prose-sm max-w-none">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Full analysis</h2>
+    {{ report.report_markdown | replace('\n', '<br>') | safe }}
+</div>
+
+{# Email capture #}
+<div class="bg-white border border-gray-200 rounded-lg p-6 mt-8">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Get notified when new 911s match your search</h2>
+    <p class="text-sm text-gray-500 mb-4">We'll alert you when similar cars appear in the market.</p>
+    <form hx-post="/email-capture" hx-target="#email-capture-result" hx-swap="innerHTML" class="flex gap-3 items-start">
+        <input type="hidden" name="report_id" value="{{ report.id }}" />
+        <input type="email" name="email" required placeholder="you@example.com"
+            class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black w-64" />
+        <button type="submit"
+            class="bg-black text-white px-4 py-2 rounded text-sm font-medium hover:bg-gray-800 shrink-0">
+            Notify me
+        </button>
+    </form>
+    <div id="email-capture-result" class="mt-2"></div>
+</div>
+
+{% endblock %}

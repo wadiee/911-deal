@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Analyze a Listing — 911 Deal Radar{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-2">Analyze a listing</h1>
+    <p class="text-gray-500 mb-8">Paste a Bring a Trailer or Cars & Bids URL, or paste the raw listing text.</p>
+
+    {% if error %}
+    <div class="bg-red-50 border border-red-300 text-red-700 text-sm px-4 py-3 rounded mb-6">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/submit" class="space-y-6">
+        <div>
+            <label class="block text-sm font-medium mb-1">Listing URL <span class="text-gray-400">(BaT or CnB)</span></label>
+            <input type="url" name="source_url" value="{{ source_url or '' }}"
+                placeholder="https://bringatrailer.com/listing/..."
+                class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">Or paste listing text</label>
+            <textarea name="raw_text" rows="8" placeholder="Paste the full listing description here..."
+                class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black">{{ raw_text or '' }}</textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Asking price override <span class="text-gray-400">(optional)</span></label>
+                <input type="number" name="price_override" min="0" step="500"
+                    placeholder="e.g. 85000"
+                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Mileage override <span class="text-gray-400">(optional)</span></label>
+                <input type="number" name="mileage_override" min="0"
+                    placeholder="e.g. 42000"
+                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Notes <span class="text-gray-400">(optional — anything else you noticed)</span></label>
+            <textarea name="notes" rows="2" placeholder="e.g. seller mentioned recent clutch replacement, one-owner..."
+                class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"></textarea>
+        </div>
+
+        <button type="submit"
+            class="bg-black text-white px-6 py-2 rounded text-sm font-medium hover:bg-gray-800">
+            Analyze this listing
+        </button>
+    </form>
+</div>
+{% endblock %}

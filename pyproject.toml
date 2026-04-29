@@ -2,4 +2,19 @@
 name = "911-deal"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "alembic>=1.18.4",
+    "anthropic>=0.97.0",
+    "beautifulsoup4>=4.14.3",
+    "fastapi>=0.136.1",
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "lxml>=6.1.0",
+    "psycopg[binary]>=3.3.3",
+    "pydantic>=2.13.3",
+    "pydantic-settings>=2.14.0",
+    "python-dotenv>=1.2.2",
+    "python-multipart>=0.0.27",
+    "sqlmodel>=0.0.38",
+    "uvicorn>=0.46.0",
+]
