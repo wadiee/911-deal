@@ -175,21 +175,30 @@ def _parse_location(soup: BeautifulSoup) -> Optional[str]:
     return None
 
 
-async def scrape(url: str) -> Optional[ParsedListing]:
+async def scrape(url: str) -> tuple[Optional[ParsedListing], Optional[int], Optional[str]]:
+    """Returns (parsed_listing, http_status, restriction_signal).
+    restriction_signal is set when the scrape was blocked or failed structurally.
+    """
     await asyncio.sleep(1.5)
     try:
         async with httpx.AsyncClient(headers=HEADERS, timeout=10, follow_redirects=True) as client:
             r = await client.get(url)
     except Exception as e:
         logger.error("BaT fetch failed for %s: %s", url, e)
-        return None
+        return None, None, "NETWORK_ERROR"
 
-    if r.status_code in (403, 429, 503):
+    if r.status_code == 403:
+        logger.warning("BaT IP_BLOCK %s for %s", r.status_code, url)
+        return None, r.status_code, "IP_BLOCK"
+    if r.status_code == 429:
+        logger.warning("BaT RATE_LIMIT %s for %s", r.status_code, url)
+        return None, r.status_code, "RATE_LIMIT"
+    if r.status_code == 503:
         logger.warning("BaT restriction %s for %s", r.status_code, url)
-        return None
+        return None, r.status_code, "IP_BLOCK"
     if r.status_code != 200:
         logger.error("BaT unexpected status %s for %s", r.status_code, url)
-        return None
+        return None, r.status_code, "STRUCTURAL_CHANGE"
 
     soup = BeautifulSoup(r.text, "lxml")
 
@@ -228,7 +237,7 @@ async def scrape(url: str) -> Optional[ParsedListing]:
     }
     filled = sum(1 for v in values.values() if v is not None)
 
-    return ParsedListing(
+    parsed = ParsedListing(
         year=year,
         generation=generation,
         trim=trim,
@@ -253,3 +262,4 @@ async def scrape(url: str) -> Optional[ParsedListing]:
         parser_confidence=round(filled / len(required), 2),
         missing_fields=[k for k, v in values.items() if v is None],
     )
+    return parsed, r.status_code, None

@@ -19,4 +19,8 @@ async def scrape(url: str) -> Optional[ParsedListing]:
     scraper = get_scraper(url)
     if scraper is None:
         return None
-    return await scraper.scrape(url)
+    result = await scraper.scrape(url)
+    # scrapers return (parsed, http_status, restriction_signal) — extract just parsed
+    if isinstance(result, tuple):
+        return result[0]
+    return result

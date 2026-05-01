@@ -116,3 +116,16 @@ class EmailCapture(SQLModel, table=True):
     email: str
     report_id: Optional[uuid.UUID] = Field(default=None, foreign_key="reports.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ScrapeEvent(SQLModel, table=True):
+    __tablename__ = "scrape_events"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    source: str
+    url: Optional[str] = None
+    run_id: str
+    http_status: Optional[int] = None
+    restriction_signal: Optional[str] = None  # RATE_LIMIT, IP_BLOCK, STRUCTURAL_CHANGE, NETWORK_ERROR
+    success: bool
+    created_at: datetime = Field(default_factory=datetime.utcnow)

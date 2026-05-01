@@ -1,6 +1,7 @@
 import os
 from logging.config import fileConfig
 
+from dotenv import load_dotenv
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from sqlmodel import SQLModel
@@ -8,6 +9,8 @@ from sqlmodel import SQLModel
 from alembic import context
 
 import app.models  # noqa: F401 — ensure all models are registered
+
+load_dotenv()
 
 config = context.config
 

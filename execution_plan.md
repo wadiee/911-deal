@@ -1107,6 +1107,61 @@ If more than 50% of reports are LOW confidence, the comp dataset is still too sp
 
 ---
 
+## Piece 11 — Cloud Migration (post local testing)
+
+**Goal:** Move from local Docker to a hosted environment so the scheduled refresh runs automatically, the database is persisted in the cloud, and the app has a real public URL.
+
+**Trigger:** Complete Piece 10 (seed validation) locally first. Migrate once comp data and report quality are confirmed good.
+
+### What to migrate
+
+1. **App hosting** — Deploy the FastAPI app to a cloud service. Good options for this stack:
+   - [Railway](https://railway.app) — simplest; supports Docker deploys, managed Postgres, and built-in cron jobs. Recommended.
+   - [Render](https://render.com) — similar; free tier available but Postgres has a 90-day expiry on free plan.
+   - [Fly.io](https://fly.io) — more control; requires a `fly.toml` config file.
+
+2. **Managed PostgreSQL** — Provision a managed Postgres instance (Railway/Render both offer this as an add-on). Update `DATABASE_URL` in the cloud service's environment variables. Run `alembic upgrade head` against the cloud DB before first deploy.
+
+3. **Scheduled refresh** — Replace the standalone `scripts/refresh.py --once` manual invocation with a scheduled job. Options:
+   - **Railway cron job**: Add a separate cron service in Railway that runs `python scripts/refresh.py --once` on a schedule (e.g., every 12 hours). Railway cron services share the same repo and env vars.
+   - **In-process scheduler**: Wire APScheduler into the FastAPI app startup event so it runs automatically when the app is running:
+     ```python
+     # In app/main.py — add a startup event
+     from apscheduler.schedulers.asyncio import AsyncIOScheduler
+     from scripts.refresh import run_refresh
+
+     scheduler = AsyncIOScheduler()
+
+     @app.on_event("startup")
+     async def start_scheduler():
+         scheduler.add_job(run_refresh, "interval", hours=12, id="refresh")
+         scheduler.start()
+
+     @app.on_event("shutdown")
+     async def stop_scheduler():
+         scheduler.shutdown()
+     ```
+   - **External cron (GitHub Actions)**: Add a `.github/workflows/refresh.yml` workflow that triggers on a schedule and calls a protected `/api/admin/refresh` endpoint. Simpler to set up but adds a GitHub Actions dependency.
+
+4. **Public URL** — The cloud service will provide a URL (e.g., `https://911-deal-radar.up.railway.app`). This is used to share report links and to wire up any future webhooks or email links.
+
+### Checklist before migrating
+
+- [ ] At least 800 confirmed sold comps in DB (Piece 10.1 targets met)
+- [ ] Test reports generate at HIGH or MEDIUM confidence for all 6 spec buckets (Piece 10.2)
+- [ ] `alembic upgrade head` tested on a clean DB (not just local Docker)
+- [ ] `ADMIN_SECRET` set to a non-default value in cloud env vars
+- [ ] `.env` file not committed (`.gitignore` check)
+- [ ] `ANTHROPIC_API_KEY` set as a secret env var in the cloud service, not hardcoded
+
+### Key invariants that carry forward
+
+- `DATABASE_URL` must point to the cloud Postgres instance (not localhost)
+- The scheduled refresh must survive app restarts — APScheduler in-process does not persist state; if using Railway cron, it is independent of app uptime
+- Report URLs (`/reports/{id}`) will be permanent once live — do not change the UUID-based routing scheme
+
+---
+
 ## Appendix: Environment Variable Reference
 
 | Variable | Description | Example |

@@ -15,6 +15,7 @@ Usage:
 import asyncio
 import logging
 import sys
+import uuid
 from argparse import ArgumentParser
 from datetime import datetime
 from decimal import Decimal
@@ -26,7 +27,7 @@ from sqlmodel import Session, select
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.database import engine
-from app.models import Listing
+from app.models import Listing, ScrapeEvent
 from app.scrapers.bat import scrape as bat_scrape
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -101,6 +102,7 @@ async def ingest(urls: list[str]) -> None:
     skipped_no_price = 0
     failed_scrape = 0
     failed_parse = 0
+    run_id = str(uuid.uuid4())
 
     with Session(engine) as session:
         existing_vins, existing_urls = _load_existing(session)
@@ -114,7 +116,18 @@ async def ingest(urls: list[str]) -> None:
             skipped_dup += 1
             continue
 
-        parsed = await bat_scrape(url)
+        parsed, http_status, restriction_signal = await bat_scrape(url)
+
+        with Session(engine) as session:
+            session.add(ScrapeEvent(
+                source="bringatrailer",
+                url=url,
+                run_id=run_id,
+                http_status=http_status,
+                restriction_signal=restriction_signal,
+                success=parsed is not None,
+            ))
+            session.commit()
 
         if parsed is None:
             logger.warning("  Failed to scrape (blocked or network error)")

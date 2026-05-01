@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Listings — Admin{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">Listings</h1>
+    <span class="text-sm text-gray-500">Page {{ page }}</span>
+</div>
+
+<div class="overflow-x-auto">
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr class="border-b border-gray-200 text-left text-xs text-gray-500 uppercase tracking-wide">
+                <th class="pb-2 pr-4">Source</th>
+                <th class="pb-2 pr-4">Year</th>
+                <th class="pb-2 pr-4">Gen</th>
+                <th class="pb-2 pr-4">Trim</th>
+                <th class="pb-2 pr-4">Trans</th>
+                <th class="pb-2 pr-4">Body</th>
+                <th class="pb-2 pr-4">Miles</th>
+                <th class="pb-2 pr-4">Price</th>
+                <th class="pb-2 pr-4">Status</th>
+                <th class="pb-2 pr-4">Quality</th>
+                <th class="pb-2">Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for l in listings %}
+            <tr class="border-b border-gray-100 hover:bg-gray-50">
+                <td class="py-2 pr-4">
+                    <a href="/admin/listings/{{ l.id }}" class="text-blue-600 hover:underline font-mono text-xs">
+                        {{ l.source }}
+                    </a>
+                </td>
+                <td class="py-2 pr-4">{{ l.year or "—" }}</td>
+                <td class="py-2 pr-4">{{ l.generation or "—" }}</td>
+                <td class="py-2 pr-4 text-xs">{{ l.trim or "—" }}</td>
+                <td class="py-2 pr-4">{{ l.transmission or "—" }}</td>
+                <td class="py-2 pr-4">{{ l.body_style or "—" }}</td>
+                <td class="py-2 pr-4">
+                    {% if l.mileage %}{{ "{:,}".format(l.mileage) }}{% else %}—{% endif %}
+                </td>
+                <td class="py-2 pr-4">
+                    {% if l.sold_price %}
+                        <span class="text-green-700">${{ "{:,.0f}".format(l.sold_price) }}</span>
+                    {% elif l.asking_price %}
+                        ${{ "{:,.0f}".format(l.asking_price) }}
+                    {% else %}—{% endif %}
+                </td>
+                <td class="py-2 pr-4">
+                    <span class="text-xs px-1.5 py-0.5 rounded
+                        {% if l.status == 'SOLD' %}bg-green-100 text-green-800
+                        {% elif l.status == 'ACTIVE' %}bg-blue-100 text-blue-800
+                        {% else %}bg-gray-100 text-gray-600{% endif %}">
+                        {{ l.status }}
+                    </span>
+                </td>
+                <td class="py-2 pr-4">
+                    {% if l.comp_quality %}
+                    <span class="text-xs px-1.5 py-0.5 rounded
+                        {% if l.comp_quality == 'HIGH' %}bg-green-100 text-green-800
+                        {% elif l.comp_quality == 'MEDIUM' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-gray-100 text-gray-600{% endif %}">
+                        {{ l.comp_quality }}
+                    </span>
+                    {% else %}—{% endif %}
+                </td>
+                <td class="py-2 text-xs text-gray-400">{{ l.created_at.strftime("%m/%d %H:%M") }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="11" class="py-8 text-center text-gray-400">No listings yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="flex gap-4 mt-6">
+    {% if page > 1 %}
+    <a href="/admin/listings?page={{ page - 1 }}" class="text-sm text-blue-600 hover:underline">← Previous</a>
+    {% endif %}
+    {% if has_next %}
+    <a href="/admin/listings?page={{ page + 1 }}" class="text-sm text-blue-600 hover:underline">Next →</a>
+    {% endif %}
+</div>
+{% endblock %}

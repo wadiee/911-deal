@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}Edit Listing — Admin{% endblock %}
+{% block content %}
+
+<div class="mb-6">
+    <a href="/admin/listings" class="text-sm text-blue-600 hover:underline">← All listings</a>
+    <h1 class="text-2xl font-bold mt-2">Edit Listing</h1>
+    <p class="text-xs text-gray-400 font-mono mt-1">{{ listing.id }}</p>
+</div>
+
+{% if saved %}
+<div class="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-800 text-sm rounded">
+    Saved.
+</div>
+{% endif %}
+
+{% if listing.source_url %}
+<div class="mb-4">
+    <a href="{{ listing.source_url }}" target="_blank" class="text-xs text-blue-500 hover:underline">
+        View original listing ↗
+    </a>
+</div>
+{% endif %}
+
+<form method="post" action="/admin/listings/{{ listing.id }}" class="space-y-8">
+
+    <!-- Core classification -->
+    <section>
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Classification</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                <select name="status" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                    {% for s in valid_statuses %}
+                    <option value="{{ s }}" {% if listing.status == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Price Type</label>
+                <select name="price_type" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                    {% for pt in valid_price_types %}
+                    <option value="{{ pt }}" {% if listing.price_type == pt %}selected{% endif %}>{{ pt }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Comp Quality</label>
+                <select name="comp_quality" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                    <option value="">—</option>
+                    {% for q in valid_comp_qualities %}
+                    <option value="{{ q }}" {% if listing.comp_quality == q %}selected{% endif %}>{{ q }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Source</label>
+                <input name="source" type="text" value="{{ listing.source }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+            </div>
+
+        </div>
+        <div class="mt-4">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Source URL</label>
+            <input name="source_url" type="text" value="{{ listing.source_url or '' }}"
+                class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm font-mono">
+        </div>
+    </section>
+
+    <!-- Vehicle identity -->
+    <section>
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Vehicle</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Year</label>
+                <input name="year" type="number" value="{{ listing.year or '' }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Generation</label>
+                <select name="generation" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                    <option value="">—</option>
+                    {% for g in valid_generations %}
+                    <option value="{{ g }}" {% if listing.generation == g %}selected{% endif %}>{{ g }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Trim</label>
+                <select name="trim" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                    <option value="">—</option>
+                    {% for t in valid_trims %}
+                    <option value="{{ t }}" {% if listing.trim == t %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Body Style</label>
+                <select name="body_style" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                    <option value="">—</option>
+                    {% for b in valid_body_styles %}
+                    <option value="{{ b }}" {% if listing.body_style == b %}selected{% endif %}>{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Transmission</label>
+                <select name="transmission" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                    <option value="">—</option>
+                    {% for tx in valid_transmissions %}
+                    <option value="{{ tx }}" {% if listing.transmission == tx %}selected{% endif %}>{{ tx }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Drivetrain</label>
+                <select name="drivetrain" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                    <option value="">—</option>
+                    {% for d in valid_drivetrains %}
+                    <option value="{{ d }}" {% if listing.drivetrain == d %}selected{% endif %}>{{ d }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Mileage</label>
+                <input name="mileage" type="number" value="{{ listing.mileage or '' }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">VIN</label>
+                <input name="vin" type="text" value="{{ listing.vin or '' }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm font-mono">
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section>
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Pricing</h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Asking Price</label>
+                <input name="asking_price" type="text" value="{{ listing.asking_price or '' }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Sold Price</label>
+                <input name="sold_price" type="text" value="{{ listing.sold_price or '' }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Last Seen Price</label>
+                <input name="last_seen_price" type="text" value="{{ listing.last_seen_price or '' }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Details -->
+    <section>
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Details</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Seller Type</label>
+                <select name="seller_type" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                    <option value="">—</option>
+                    {% for st in valid_seller_types %}
+                    <option value="{{ st }}" {% if listing.seller_type == st %}selected{% endif %}>{{ st }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Exterior Color</label>
+                <input name="exterior_color" type="text" value="{{ listing.exterior_color or '' }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Interior Color</label>
+                <input name="interior_color" type="text" value="{{ listing.interior_color or '' }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Location</label>
+                <input name="location" type="text" value="{{ listing.location or '' }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Title Status</label>
+                <input name="title_status" type="text" value="{{ listing.title_status or '' }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Accident Reported</label>
+                <select name="accident_reported" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                    <option value="">—</option>
+                    <option value="false" {% if listing.accident_reported == False %}selected{% endif %}>No</option>
+                    <option value="true" {% if listing.accident_reported == True %}selected{% endif %}>Yes</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Owner Count</label>
+                <input name="owner_count" type="number" value="{{ listing.owner_count or '' }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">CPO</label>
+                <select name="cpo" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                    <option value="">—</option>
+                    <option value="false" {% if listing.cpo == False %}selected{% endif %}>No</option>
+                    <option value="true" {% if listing.cpo == True %}selected{% endif %}>Yes</option>
+                </select>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Notes -->
+    <section>
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Notes</h2>
+        <div class="space-y-4">
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Expert Notes</label>
+                <textarea name="expert_notes" rows="3"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">{{ listing.expert_notes or '' }}</textarea>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Normalized Notes</label>
+                <textarea name="normalized_notes" rows="2"
+                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">{{ listing.normalized_notes or '' }}</textarea>
+            </div>
+
+        </div>
+    </section>
+
+    <div class="flex gap-3 pt-2">
+        <button type="submit"
+            class="px-5 py-2 bg-gray-900 text-white text-sm font-medium rounded hover:bg-gray-700">
+            Save changes
+        </button>
+        <a href="/admin/listings" class="px-5 py-2 border border-gray-300 text-sm rounded hover:bg-gray-50">
+            Cancel
+        </a>
+    </div>
+
+</form>
+
+<div class="mt-10 pt-6 border-t border-gray-100 text-xs text-gray-400 space-y-1">
+    <p>Created: {{ listing.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</p>
+    <p>Updated: {{ listing.updated_at.strftime("%Y-%m-%d %H:%M UTC") }}</p>
+    {% if listing.confidence_score is not none %}
+    <p>Parser confidence: {{ listing.confidence_score }}</p>
+    {% endif %}
+</div>
+
+{% endblock %}
