@@ -22,7 +22,7 @@ type: project
   - ScrapeEvent logging to DB — **done (2026-05-01)**
   - Scheduled refresh integration into app startup — **deferred** (do after cloud migration)
 - **Piece 10** Seed validation — not yet run
-- **Piece 11** Cloud migration — documented in execution_plan.md; not yet started
+- **Piece 11** Cloud migration — **done (2026-05-04)**. Live at https://911-deal-ivory-dew-5324.fly.dev/ on Fly.io. Postgres on `911-deal-db.flycast`. Alembic runs on deploy via `fly.toml` release_command.
 
 ## Admin UI decision
 

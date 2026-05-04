@@ -22,22 +22,34 @@ _FETCH_HEADERS = {
 }
 
 
-async def _fetch_url_text(url: str) -> Optional[str]:
-    """Fetch a URL and return visible text only — strips HTML, scripts, and styles."""
+_BOT_SIGNALS = [
+    "enable javascript", "enable js", "please enable",
+    "captcha", "cf-challenge", "access denied",
+    "unusual traffic", "not a robot", "verify you are human",
+    "datadome", "distil-referrer",
+]
+
+
+async def _fetch_url_text(url: str) -> tuple[Optional[str], bool]:
+    """Fetch a URL and return (visible_text, bot_protected).
+    bot_protected=True means the page returned a CAPTCHA or bot-block page.
+    """
     try:
         async with httpx.AsyncClient(headers=_FETCH_HEADERS, timeout=15, follow_redirects=True) as client:
             r = await client.get(url)
         if r.status_code != 200:
-            return None
+            return None, False
+        raw_lower = r.text.lower()
+        if any(signal in raw_lower for signal in _BOT_SIGNALS):
+            return None, True
         soup = BeautifulSoup(r.text, "lxml")
         for tag in soup(["script", "style", "nav", "footer", "header"]):
             tag.decompose()
         text = soup.get_text(separator="\n", strip=True)
-        # Collapse runs of blank lines down to one
         text = re.sub(r"\n{3,}", "\n\n", text)
-        return text[:12000]  # cap at ~3k tokens, well within context
+        return text[:12000], False
     except Exception:
-        return None
+        return None, False
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -76,7 +88,13 @@ async def submit_post(
     if parsed is None:
         from app import listing_parser
         if not text and url:
-            fetched = await _fetch_url_text(url)
+            fetched, bot_protected = await _fetch_url_text(url)
+            if bot_protected:
+                return templates.TemplateResponse(request, "submit.html", {
+                    "error": "That site blocks automated access (Carfax, CarMax, AutoTrader, etc.). Please copy and paste the listing text below instead.",
+                    "source_url": url or "",
+                    "raw_text": "",
+                })
             if not fetched:
                 return templates.TemplateResponse(request, "submit.html", {
                     "error": "Could not load that URL. Please paste the listing text instead.",
