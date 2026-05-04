@@ -11,6 +11,7 @@ dependencies = [
     "httpx>=0.28.1",
     "jinja2>=3.1.6",
     "lxml>=6.1.0",
+    "markdown>=3.10.2",
     "psycopg[binary]>=3.3.3",
     "pydantic>=2.13.3",
     "pydantic-settings>=2.14.0",

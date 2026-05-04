@@ -2,6 +2,10 @@ from decimal import Decimal
 from uuid import UUID
 from typing import Optional
 
+import re
+
+import httpx
+from bs4 import BeautifulSoup
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -12,6 +16,28 @@ from app.database import get_session
 from app.models import Listing, Report, CompMatch, EmailCapture
 from app.scrapers import registry
 from app.valuation_service import ValuationInput, compute
+
+_FETCH_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
+
+
+async def _fetch_url_text(url: str) -> Optional[str]:
+    """Fetch a URL and return visible text only — strips HTML, scripts, and styles."""
+    try:
+        async with httpx.AsyncClient(headers=_FETCH_HEADERS, timeout=15, follow_redirects=True) as client:
+            r = await client.get(url)
+        if r.status_code != 200:
+            return None
+        soup = BeautifulSoup(r.text, "lxml")
+        for tag in soup(["script", "style", "nav", "footer", "header"]):
+            tag.decompose()
+        text = soup.get_text(separator="\n", strip=True)
+        # Collapse runs of blank lines down to one
+        text = re.sub(r"\n{3,}", "\n\n", text)
+        return text[:12000]  # cap at ~3k tokens, well within context
+    except Exception:
+        return None
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -41,29 +67,46 @@ async def submit_post(
     url = source_url.strip() if source_url and source_url.strip() else None
     text = raw_text.strip() if raw_text and raw_text.strip() else None
 
-    # 1. Try scraper first if URL provided
+    # 1. Try dedicated scraper first if URL provided
     parsed = None
     if url:
         parsed = await registry.scrape(url)
 
-    # 2. Fall through to AI parser with raw text
+    # 2. Fall through to AI parser — use pasted text, or fetch the URL if no text given
     if parsed is None:
+        from app import listing_parser
+        if not text and url:
+            fetched = await _fetch_url_text(url)
+            if not fetched:
+                return templates.TemplateResponse(request, "submit.html", {
+                    "error": "Could not load that URL. Please paste the listing text instead.",
+                    "source_url": url or "",
+                    "raw_text": "",
+                })
+            text = fetched
         if not text:
             return templates.TemplateResponse(request, "submit.html", {
                 "error": "Please provide a listing URL or paste the listing text.",
-                "source_url": url or "",
-                "raw_text": text or "",
+                "source_url": "",
+                "raw_text": "",
             })
-        from app import listing_parser
         parsed = await listing_parser.parse(text)
 
-    # 3. Apply user overrides
+    # 3. Validate this looks like a Porsche 911
+    if parsed.year is None and parsed.trim is None and parsed.generation is None:
+        return templates.TemplateResponse(request, "submit.html", {
+            "error": "This doesn't look like a Porsche 911 listing. Please check the URL or paste the listing text.",
+            "source_url": url or "",
+            "raw_text": text or "",
+        })
+
+    # 4. Apply user overrides
     if price_override is not None:
         parsed.asking_price = Decimal(str(price_override))
     if mileage_override is not None:
         parsed.mileage = mileage_override
 
-    # 4. Determine source label
+    # 5. Determine source label
     if url:
         if "bringatrailer.com" in url:
             source = "bringatrailer"
@@ -79,7 +122,7 @@ async def submit_post(
     price_type = "SOLD_PRICE" if parsed.sold_price else "ASKING_PRICE"
     status = "SOLD" if parsed.sold_price else "ACTIVE"
 
-    # 5. Save listing
+    # 6. Save listing
     listing = Listing(
         source=source,
         source_url=url,
@@ -112,7 +155,7 @@ async def submit_post(
     session.commit()
     session.refresh(listing)
 
-    # 6. Generate report inline
+    # 7. Generate report inline
     comp_scores = comp_matcher.find_comps(listing, session, limit=20)
     comp_listings_map = {
         str(cs.listing_id): session.get(Listing, cs.listing_id)
