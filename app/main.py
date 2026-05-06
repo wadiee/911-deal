@@ -3,11 +3,13 @@ from contextlib import asynccontextmanager
 
 import markdown as md_lib
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
 
 from app.routers import public, admin, api
+from app.routers.admin import NotAuthenticated
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="911 Deal Radar", lifespan=lifespan)
+
+
+@app.exception_handler(NotAuthenticated)
+async def not_authenticated_handler(request: Request, exc: NotAuthenticated):
+    return RedirectResponse(url="/admin/login", status_code=303)
 
 templates = Jinja2Templates(directory="app/templates")
 templates.env.globals["zip"] = zip

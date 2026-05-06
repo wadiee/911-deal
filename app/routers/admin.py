@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Optional
@@ -8,11 +10,64 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
+from app.config import settings
 from app.database import get_session
-from app.models import Listing
+from app.models import Listing, Report
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+
+COOKIE_NAME = "admin_token"
+COOKIE_MAX_AGE = 60 * 60 * 8  # 8 hours
+
+
+class NotAuthenticated(Exception):
+    pass
+
+
+def _make_token() -> str:
+    return hmac.new(settings.admin_secret.encode(), b"admin-authenticated", hashlib.sha256).hexdigest()
+
+
+def _verify_token(token: str) -> bool:
+    return hmac.compare_digest(token, _make_token())
+
+
+def require_admin(request: Request) -> None:
+    token = request.cookies.get(COOKIE_NAME, "")
+    if not _verify_token(token):
+        raise NotAuthenticated()
+
+
+@router.get("/login", response_class=HTMLResponse)
+def login_get(request: Request):
+    return templates.TemplateResponse(request, "admin/login.html", {})
+
+
+@router.post("/login")
+def login_post(request: Request, password: str = Form()):
+    if not hmac.compare_digest(password, settings.admin_secret):
+        return templates.TemplateResponse(request, "admin/login.html", {"error": "Invalid password"})
+    response = RedirectResponse(url="/admin", status_code=303)
+    response.set_cookie(COOKIE_NAME, _make_token(), max_age=COOKIE_MAX_AGE, httponly=True, samesite="lax")
+    return response
+
+
+@router.post("/logout")
+def logout():
+    response = RedirectResponse(url="/admin/login", status_code=303)
+    response.delete_cookie(COOKIE_NAME)
+    return response
+
+
+@router.get("", response_class=HTMLResponse)
+def admin_index(request: Request, _: None = Depends(require_admin), session: Session = Depends(get_session)):
+    listing_count = len(session.exec(select(Listing)).all())
+    report_count = len(session.exec(select(Report)).all())
+    return templates.TemplateResponse(request, "admin/index.html", {
+        "listing_count": listing_count,
+        "report_count": report_count,
+    })
 
 VALID_STATUSES = ["ACTIVE", "SOLD", "NO_SALE", "REMOVED_UNKNOWN", "WITHDRAWN", "EXPIRED", "UNKNOWN"]
 VALID_PRICE_TYPES = ["ASKING_PRICE", "SOLD_PRICE", "BID_TO_PRICE", "PRICE_DROP", "LAST_SEEN_PRICE", "UNKNOWN_FINAL"]
@@ -51,10 +106,36 @@ def _opt_int(val: Optional[str]) -> Optional[int]:
         return None
 
 
+@router.get("/reports", response_class=HTMLResponse)
+def report_list(
+    request: Request,
+    page: int = 1,
+    _: None = Depends(require_admin),
+    session: Session = Depends(get_session),
+):
+    page_size = 50
+    offset = (page - 1) * page_size
+    reports = session.exec(
+        select(Report).order_by(Report.created_at.desc()).offset(offset).limit(page_size + 1)
+    ).all()
+    has_next = len(reports) > page_size
+    target_listings = {
+        str(r.target_listing_id): session.get(Listing, r.target_listing_id)
+        for r in reports[:page_size]
+    }
+    return templates.TemplateResponse(request, "admin/reports.html", {
+        "reports": reports[:page_size],
+        "target_listings": target_listings,
+        "page": page,
+        "has_next": has_next,
+    })
+
+
 @router.get("/listings", response_class=HTMLResponse)
 def listing_list(
     request: Request,
     page: int = 1,
+    _: None = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
     page_size = 50
@@ -74,6 +155,7 @@ def listing_list(
 def listing_edit(
     listing_id: str,
     request: Request,
+    _: None = Depends(require_admin),
     session: Session = Depends(get_session),
     saved: bool = False,
 ):
@@ -99,6 +181,7 @@ def listing_edit(
 def listing_update(
     listing_id: str,
     request: Request,
+    _: None = Depends(require_admin),
     session: Session = Depends(get_session),
     source: Optional[str] = Form(default=None),
     source_url: Optional[str] = Form(default=None),

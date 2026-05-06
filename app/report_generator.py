@@ -31,25 +31,41 @@ def _fmt(val) -> str:
 
 def _verdict(target: Listing, valuation: ValuationResult) -> str:
     asking = target.asking_price
+    sold = target.sold_price
+    price = asking or sold
     low = valuation.estimated_market_low
     high = valuation.estimated_market_high
 
-    if asking is None or low is None or high is None:
+    if price is None or low is None or high is None:
         return "Insufficient data to assess"
 
-    asking_f = float(asking)
+    price_f = float(price)
     low_f = float(low)
     high_f = float(high)
 
-    if asking_f < low_f * 0.95:
+    if sold and not asking:
+        # Describe where the sold price landed relative to market
+        if price_f < low_f * 0.95:
+            return "Sold well below market"
+        if price_f < low_f:
+            return "Sold below market estimate"
+        if price_f <= high_f:
+            return "Sold at fair market value"
+        if price_f <= high_f * 1.05:
+            return "Sold slightly above market"
+        if price_f <= high_f * 1.15:
+            return "Sold above market"
+        return "Sold significantly above market"
+
+    if price_f < low_f * 0.95:
         return "Strong value — priced well below market"
-    if asking_f < low_f:
+    if price_f < low_f:
         return "Fair deal — below market estimate"
-    if asking_f <= high_f:
+    if price_f <= high_f:
         return "Fair deal"
-    if asking_f <= high_f * 1.05:
+    if price_f <= high_f * 1.05:
         return "Slightly above market"
-    if asking_f <= high_f * 1.15:
+    if price_f <= high_f * 1.15:
         return "Overpriced"
     return "Significantly overpriced"
 
@@ -212,8 +228,10 @@ def _markdown(
     lines.append("### Summary")
     lines.append(f"**Verdict: {verdict}**")
     lines.append("")
+    price_label = "Sold price" if target.sold_price and not target.asking_price else "Asking price"
+    display_price = target.asking_price or target.sold_price
     lines.append(
-        f"Asking price: **{_fmt(target.asking_price)}** · "
+        f"{price_label}: **{_fmt(display_price)}** · "
         f"Market estimate: **{_fmt(v.estimated_market_low)} – {_fmt(v.estimated_market_high)}** · "
         f"Confidence: **{v.confidence_level}**"
     )

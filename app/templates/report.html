@@ -135,12 +135,50 @@
 <div class="bg-white border border-gray-200 rounded-lg p-6 mt-8">
     <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Get notified when new 911s match your search</h2>
     <p class="text-sm text-gray-500 mb-4">We'll alert you when similar cars appear in the market.</p>
-    <form hx-post="/email-capture" hx-target="#email-capture-result" hx-swap="innerHTML" class="flex gap-3 items-start">
+    <form hx-post="/email-capture" hx-target="#email-capture-result" hx-swap="innerHTML" class="space-y-3">
         <input type="hidden" name="report_id" value="{{ report.id }}" />
-        <input type="email" name="email" required placeholder="you@example.com"
-            class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black w-64" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Email <span class="text-red-500">*</span></label>
+                <input type="email" name="email" required placeholder="you@example.com"
+                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Name <span class="text-gray-400">(optional)</span></label>
+                <input type="text" name="name" placeholder="Your name"
+                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Generation interested in <span class="text-gray-400">(optional)</span></label>
+                <select name="trim_interest"
+                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white">
+                    <option value="">Any generation</option>
+                    <option value="992.2">992.2 (2024+)</option>
+                    <option value="992.1">992.1 (2020–2023)</option>
+                    <option value="991.2">991.2 (2017–2019)</option>
+                    <option value="991.1">991.1 (2012–2016)</option>
+                    <option value="997.2">997.2 (2009–2011)</option>
+                    <option value="997.1">997.1 (2005–2008)</option>
+                    <option value="996">996 (1999–2004)</option>
+                    <option value="993">993 (1994–1998)</option>
+                    <option value="964">964 (1989–1993)</option>
+                    <option value="G-series">G-series (1974–1988)</option>
+                    <option value="F-series">F-series (1964–1973)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Budget range <span class="text-gray-400">(optional)</span></label>
+                <div class="flex gap-2 items-center">
+                    <input type="number" name="budget_min" placeholder="Min $"
+                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                    <span class="text-gray-400 text-sm shrink-0">to</span>
+                    <input type="number" name="budget_max" placeholder="Max $"
+                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                </div>
+            </div>
+        </div>
         <button type="submit"
-            class="bg-black text-white px-4 py-2 rounded text-sm font-medium hover:bg-gray-800 shrink-0">
+            class="bg-black text-white px-4 py-2 rounded text-sm font-medium hover:bg-gray-800">
             Notify me
         </button>
     </form>

@@ -89,8 +89,11 @@ def _parse_description(text: str) -> dict:
 
     # Exact mileage
     m = re.search(r"([\d,]+)[\s-]mile", text, re.IGNORECASE)
-    if m:
-        result["mileage"] = int(m.group(1).replace(",", ""))
+    if m and m.group(1):
+        try:
+            result["mileage"] = int(m.group(1).replace(",", ""))
+        except ValueError:
+            pass
 
     # Generation (explicitly mentioned like "991.2" or "992.1")
     m = re.search(r"\b(99[12]\.[12])\b", text)

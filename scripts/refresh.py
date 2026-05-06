@@ -241,7 +241,7 @@ def _cg_raw_to_listing(raw: dict) -> Optional[Listing]:
 
     return Listing(
         source="cargurus",
-        source_url=f"https://www.cargurus.com/Cars/new/nl/d404#listing={listing_id}",
+        source_url=f"https://www.cargurus.com/details/{listing_id}",
         status="ACTIVE",
         price_type="ASKING_PRICE",
         asking_price=Decimal(str(price)),

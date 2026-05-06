@@ -115,6 +115,10 @@ class EmailCapture(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     email: str
     report_id: Optional[uuid.UUID] = Field(default=None, foreign_key="reports.id")
+    name: Optional[str] = None
+    trim_interest: Optional[str] = None
+    budget_min: Optional[int] = None
+    budget_max: Optional[int] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 

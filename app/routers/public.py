@@ -6,9 +6,11 @@ import re
 
 import httpx
 from bs4 import BeautifulSoup
+import markdown as md_lib
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup
 from sqlmodel import Session
 
 from app import comp_matcher, report_generator
@@ -54,6 +56,7 @@ async def _fetch_url_text(url: str) -> tuple[Optional[str], bool]:
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 templates.env.globals["zip"] = zip
+templates.env.filters["markdown"] = lambda text: Markup(md_lib.markdown(text or "", extensions=["nl2br"]))
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -193,7 +196,7 @@ async def submit_post(
         target_listing_id=listing.id,
         verdict=report_out.verdict,
         confidence_level=valuation.confidence_level,
-        asking_price=listing.asking_price,
+        asking_price=listing.asking_price or listing.sold_price,
         estimated_low=valuation.estimated_market_low,
         estimated_high=valuation.estimated_market_high,
         recommended_offer_low=valuation.recommended_offer_low,
@@ -264,6 +267,10 @@ def email_capture(
     request: Request,
     email: str = Form(),
     report_id: str = Form(default=""),
+    name: Optional[str] = Form(default=None),
+    trim_interest: Optional[str] = Form(default=None),
+    budget_min: Optional[int] = Form(default=None),
+    budget_max: Optional[int] = Form(default=None),
     session: Session = Depends(get_session),
 ):
     email = email.strip().lower()
@@ -273,6 +280,10 @@ def email_capture(
     capture = EmailCapture(
         email=email,
         report_id=UUID(report_id) if report_id else None,
+        name=name.strip() if name and name.strip() else None,
+        trim_interest=trim_interest.strip() if trim_interest and trim_interest.strip() else None,
+        budget_min=budget_min,
+        budget_max=budget_max,
     )
     session.add(capture)
     session.commit()
