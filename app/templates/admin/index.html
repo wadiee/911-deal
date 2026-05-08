@@ -8,7 +8,7 @@
     </form>
 </div>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
     <div class="bg-white border border-gray-200 rounded-lg p-6">
         <div class="text-3xl font-bold text-black mb-1">{{ listing_count }}</div>
         <div class="text-sm text-gray-500">Total listings</div>
@@ -16,6 +16,10 @@
     <div class="bg-white border border-gray-200 rounded-lg p-6">
         <div class="text-3xl font-bold text-black mb-1">{{ report_count }}</div>
         <div class="text-sm text-gray-500">Reports generated</div>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-lg p-6">
+        <div class="text-3xl font-bold text-black mb-1">{{ subscriber_count }}</div>
+        <div class="text-sm text-gray-500">Subscribers</div>
     </div>
 </div>
 
@@ -33,6 +37,14 @@
         <div>
             <div class="font-medium">Reports</div>
             <div class="text-sm text-gray-500">View all generated buyer reports</div>
+        </div>
+        <span class="text-gray-400">→</span>
+    </a>
+    <a href="/admin/subscribers"
+        class="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-6 py-4 hover:border-gray-400 transition-colors">
+        <div>
+            <div class="font-medium">Subscribers</div>
+            <div class="text-sm text-gray-500">Email signups with generation interest and budget</div>
         </div>
         <span class="text-gray-400">→</span>
     </a>

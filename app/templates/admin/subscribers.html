@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Subscribers — Admin{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-4">
+        <a href="/admin" class="text-sm text-gray-500 hover:text-gray-800">← Admin</a>
+        <h1 class="text-2xl font-bold">Subscribers</h1>
+    </div>
+    <span class="text-sm text-gray-500">{{ captures | length }} total</span>
+</div>
+
+{% if captures %}
+<div class="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+                <th class="text-left px-4 py-3 font-medium text-gray-600">Email</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-600">Name</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-600">Generation interest</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-600">Budget</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-600">Report context</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-600">Signed up</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for c in captures %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-medium">
+                    <a href="mailto:{{ c.email }}" class="text-blue-600 hover:underline">{{ c.email }}</a>
+                </td>
+                <td class="px-4 py-3 text-gray-700">{{ c.name or '—' }}</td>
+                <td class="px-4 py-3 text-gray-700">{{ c.trim_interest or '—' }}</td>
+                <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
+                    {% if c.budget_min and c.budget_max %}
+                        ${{ "{:,.0f}".format(c.budget_min) }} – ${{ "{:,.0f}".format(c.budget_max) }}
+                    {% elif c.budget_min %}
+                        ${{ "{:,.0f}".format(c.budget_min) }}+
+                    {% elif c.budget_max %}
+                        up to ${{ "{:,.0f}".format(c.budget_max) }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-gray-500">
+                    {% if c.report_id %}
+                        {% set listing = target_listings.get(c.report_id | string) %}
+                        {% if listing %}
+                            <a href="/reports/{{ c.report_id }}" target="_blank" class="text-blue-600 hover:underline">
+                                {{ listing.year }} {{ listing.trim }} {{ listing.generation }}
+                            </a>
+                        {% else %}
+                            <a href="/reports/{{ c.report_id }}" target="_blank" class="text-blue-600 hover:underline">View report</a>
+                        {% endif %}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-gray-500 whitespace-nowrap">{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="bg-white border border-gray-200 rounded-lg p-12 text-center text-gray-400">
+    No subscribers yet.
+</div>
+{% endif %}
+{% endblock %}

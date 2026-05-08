@@ -61,8 +61,6 @@ CG_BASE_URL = (
     "&distance=100"
     "&sortDirection=ASC"
     "&sortType=BEST_MATCH"
-    "&startYear=2016"
-    "&endYear=2019"
     "&vehicleHistoryOptions=CLEAN_TITLE%2CUNDAMAGED_FRAME%2CNO_THEFT_HISTORY%2CLEMON_FREE%2CNON_SALVAGE"
     "&zip={zip}"
     "&startIndex=0"
@@ -84,7 +82,6 @@ METRO_ZIPS = {
 
 CG_MIN_PRICE = 50_000
 CG_MAX_PRICE = 600_000
-CG_VALID_YEARS = range(2016, 2020)
 
 
 def _load_existing(session: Session) -> tuple[set[str], set[str]]:
@@ -230,7 +227,7 @@ def _extract_cg_listings(html: str) -> list[dict]:
 
 def _cg_raw_to_listing(raw: dict) -> Optional[Listing]:
     year = raw.get("year")
-    if not year or year not in CG_VALID_YEARS:
+    if not year:
         return None
     price = raw.get("price")
     if not price or not (CG_MIN_PRICE <= price <= CG_MAX_PRICE):
@@ -263,7 +260,7 @@ def _cg_raw_to_listing(raw: dict) -> Optional[Listing]:
 
 
 def refresh_cargurus() -> int:
-    """Fetch one page of active 991.2 listings per metro, save new ones."""
+    """Fetch one page of active Porsche 911 listings per metro, save new ones."""
     logger.info("[CarGurus] Starting refresh (%d metros)", len(METRO_ZIPS))
     run_id = str(uuid.uuid4())
 

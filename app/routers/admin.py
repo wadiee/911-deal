@@ -12,7 +12,7 @@ from sqlmodel import Session, select
 
 from app.config import settings
 from app.database import get_session
-from app.models import Listing, Report
+from app.models import EmailCapture, Listing, Report
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -64,9 +64,11 @@ def logout():
 def admin_index(request: Request, _: None = Depends(require_admin), session: Session = Depends(get_session)):
     listing_count = len(session.exec(select(Listing)).all())
     report_count = len(session.exec(select(Report)).all())
+    subscriber_count = len(session.exec(select(EmailCapture)).all())
     return templates.TemplateResponse(request, "admin/index.html", {
         "listing_count": listing_count,
         "report_count": report_count,
+        "subscriber_count": subscriber_count,
     })
 
 VALID_STATUSES = ["ACTIVE", "SOLD", "NO_SALE", "REMOVED_UNKNOWN", "WITHDRAWN", "EXPIRED", "UNKNOWN"]
@@ -104,6 +106,29 @@ def _opt_int(val: Optional[str]) -> Optional[int]:
         return int(val.strip())
     except ValueError:
         return None
+
+
+@router.get("/subscribers", response_class=HTMLResponse)
+def subscriber_list(
+    request: Request,
+    _: None = Depends(require_admin),
+    session: Session = Depends(get_session),
+):
+    captures = session.exec(
+        select(EmailCapture).order_by(EmailCapture.created_at.desc())
+    ).all()
+    report_ids = {str(c.report_id) for c in captures if c.report_id}
+    target_listings = {}
+    for rid in report_ids:
+        from uuid import UUID as _UUID
+        report = session.get(Report, _UUID(rid))
+        if report:
+            listing = session.get(Listing, report.target_listing_id)
+            target_listings[rid] = listing
+    return templates.TemplateResponse(request, "admin/subscribers.html", {
+        "captures": captures,
+        "target_listings": target_listings,
+    })
 
 
 @router.get("/reports", response_class=HTMLResponse)
