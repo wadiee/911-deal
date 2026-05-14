@@ -1,52 +1,77 @@
 {% extends "base.html" %}
 {% block title %}Analyze a Listing — 911 Deal Radar{% endblock %}
 {% block content %}
-<div class="max-w-2xl mx-auto">
-    <h1 class="text-3xl font-bold mb-2">Analyze a listing</h1>
-    <p class="text-gray-500 mb-8">Paste a Bring a Trailer or Cars & Bids URL, or paste the raw listing text.</p>
+
+<div class="max-w-2xl mx-auto px-8 py-12">
+
+    <div class="border-b border-line pb-8 mb-10">
+        <p class="eyebrow fade-up mb-3" style="animation-delay:0s">Market Analysis</p>
+        <h1 class="display font-bold text-[40px] leading-none text-ink mb-2 fade-up" style="animation-delay:0.07s">Analyze a listing</h1>
+        <p class="text-muted fade-up" style="animation-delay:0.14s">Paste a listing URL or the raw text. We'll handle the rest.</p>
+    </div>
 
     {% if error %}
-    <div class="bg-red-50 border border-red-300 text-red-700 text-sm px-4 py-3 rounded mb-6">{{ error }}</div>
+    <div class="border-l-4 border-red bg-red/10 text-red-dark px-4 py-3 text-sm mb-6">{{ error }}</div>
     {% endif %}
 
-    <form method="post" action="/submit" class="space-y-6">
+    <form method="post" action="/submit" class="space-y-6" id="submit-form"
+        onsubmit="var btn=document.getElementById('submit-btn'); btn.disabled=true; btn.innerHTML='Analyzing&hellip;';">
+
         <div>
-            <label class="block text-sm font-medium mb-1">Listing URL <span class="text-gray-400">(BaT or CnB)</span></label>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-muted mb-2">Listing URL</label>
             <input type="url" name="source_url" value="{{ source_url or '' }}"
-                placeholder="https://bringatrailer.com/listing/..."
-                class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-        </div>
-        <div>
-            <label class="block text-sm font-medium mb-1">Or paste listing text</label>
-            <textarea name="raw_text" rows="8" placeholder="Paste the full listing description here..."
-                class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black">{{ raw_text or '' }}</textarea>
+                placeholder="https://bringatrailer.com/listing/... or cargurus.com/details/..."
+                class="w-full bg-paper2 border border-line text-ink px-4 py-3 text-sm focus:outline-none focus:border-ink transition-colors" />
+            <p class="text-xs text-muted mt-1.5">Supported: Bring a Trailer, CarGurus. Other sites: paste text below instead.</p>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">Asking price override <span class="text-gray-400">(optional)</span></label>
-                <input type="number" name="price_override" min="0" step="500"
-                    placeholder="e.g. 85000"
-                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Mileage override <span class="text-gray-400">(optional)</span></label>
-                <input type="number" name="mileage_override" min="0"
-                    placeholder="e.g. 42000"
-                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+        <div class="relative">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-line"></div></div>
+            <div class="relative flex justify-center">
+                <span class="bg-paper px-3 text-xs text-muted uppercase tracking-widest">or paste listing text</span>
             </div>
         </div>
 
         <div>
-            <label class="block text-sm font-medium mb-1">Notes <span class="text-gray-400">(optional — anything else you noticed)</span></label>
-            <textarea name="notes" rows="2" placeholder="e.g. seller mentioned recent clutch replacement, one-owner..."
-                class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"></textarea>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-muted mb-2">Listing text</label>
+            <textarea name="raw_text" rows="7"
+                placeholder="Paste the full listing description, title, price, and specs here..."
+                class="w-full bg-paper2 border border-line text-ink px-4 py-3 text-sm focus:outline-none focus:border-ink transition-colors resize-none">{{ raw_text or '' }}</textarea>
         </div>
 
-        <button type="submit"
-            class="bg-black text-white px-6 py-2 rounded text-sm font-medium hover:bg-gray-800">
-            Analyze this listing
-        </button>
+        <details class="group">
+            <summary class="text-xs font-semibold uppercase tracking-widest text-muted cursor-pointer hover:text-ink list-none flex items-center gap-2 transition-colors">
+                <span class="group-open:hidden">＋</span><span class="hidden group-open:inline">−</span>
+                Override price or mileage
+            </summary>
+            <div class="grid grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label class="block text-xs text-muted mb-1.5">Asking price ($)</label>
+                    <input type="number" name="price_override" min="0" step="500" placeholder="e.g. 85000"
+                        class="w-full bg-paper2 border border-line text-ink px-4 py-2 text-sm focus:outline-none focus:border-ink transition-colors" />
+                </div>
+                <div>
+                    <label class="block text-xs text-muted mb-1.5">Mileage</label>
+                    <input type="number" name="mileage_override" min="0" placeholder="e.g. 42000"
+                        class="w-full bg-paper2 border border-line text-ink px-4 py-2 text-sm focus:outline-none focus:border-ink transition-colors" />
+                </div>
+            </div>
+            <div class="mt-4">
+                <label class="block text-xs text-muted mb-1.5">Notes</label>
+                <textarea name="notes" rows="2"
+                    placeholder="e.g. seller mentioned recent clutch replacement, one-owner..."
+                    class="w-full bg-paper2 border border-line text-ink px-4 py-2 text-sm focus:outline-none focus:border-ink transition-colors resize-none"></textarea>
+            </div>
+        </details>
+
+        <div class="pt-2">
+            <button type="submit" id="submit-btn"
+                class="bg-red text-white mono text-[12px] font-semibold tracking-[0.15em] uppercase px-8 py-3.5 hover:bg-red-dark transition-colors disabled:opacity-50">
+                Analyze this listing ⇢
+            </button>
+        </div>
+
     </form>
 </div>
+
 {% endblock %}

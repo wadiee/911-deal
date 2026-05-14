@@ -1,31 +1,163 @@
 {% extends "base.html" %}
+{% block title %}911 Deal Radar — Know what a 911 is really worth{% endblock %}
 
-{% block content %}
-<div class="max-w-2xl mx-auto py-20 text-center">
-    <h1 class="text-5xl font-bold tracking-tight mb-4">911 Deal Radar</h1>
-    <p class="text-gray-500 text-xl mb-10">
-        Paste any Porsche 911 listing and get an instant market analysis — price verdict, comps, and what to ask the seller.
-    </p>
-    <a href="/submit"
-        class="inline-block bg-black text-white text-lg font-semibold px-8 py-4 rounded-lg hover:bg-gray-800 transition-colors">
-        Analyze a listing →
-    </a>
-    <div class="mt-16 grid grid-cols-3 gap-8 text-left">
-        <div>
-            <div class="text-2xl mb-2">🔍</div>
-            <h3 class="font-semibold mb-1">Market pricing</h3>
-            <p class="text-sm text-gray-500">See how the asking price compares to recent sold comps and active listings.</p>
-        </div>
-        <div>
-            <div class="text-2xl mb-2">⚠️</div>
-            <h3 class="font-semibold mb-1">Risk flags</h3>
-            <p class="text-sm text-gray-500">Catch accident history, title issues, high mileage, and other red flags automatically.</p>
-        </div>
-        <div>
-            <div class="text-2xl mb-2">💬</div>
-            <h3 class="font-semibold mb-1">Seller questions</h3>
-            <p class="text-sm text-gray-500">Get a tailored list of questions to ask before you make an offer.</p>
+{% block hero %}
+<section class="max-w-6xl mx-auto px-8 pt-16 pb-12 grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-14 items-start">
+
+    {# LEFT — headline + CTA + trust strip #}
+    <div>
+        <p class="eyebrow fade-up" style="animation-delay:0s">Built for buyers · Not dealers</p>
+        <h1 class="display font-bold leading-[0.92] mt-5 fade-up" style="font-size:clamp(3.5rem,8.2vw,7rem);animation-delay:0.08s">
+            Know what a<br>
+            <span class="text-red">911</span> is really<br>worth.
+        </h1>
+        <p class="text-lg text-ink2 max-w-[480px] mt-7 leading-relaxed fade-up" style="animation-delay:0.16s">
+            Paste a listing URL. We pull every comparable 991.2 and 992 sale from
+            Bring a Trailer, Cars &amp; Bids, dealer feeds and PCA classifieds —
+            then tell you, plainly, whether it's a deal.
+        </p>
+
+        {# Inline submit strip #}
+        <form action="/submit" method="get" class="mt-9 max-w-[560px] flex items-center gap-3 bg-ink text-paper px-5 py-4 fade-up" style="animation-delay:0.24s">
+            <span class="mono text-[10px] tracking-[0.2em] opacity-60">URL</span>
+            <input type="text" name="prefill" placeholder="bringatrailer.com/listing/…" class="mono flex-1 bg-transparent border-0 outline-none text-paper text-[13px] placeholder-paper/30">
+            <button type="submit" class="bg-red text-white px-4 py-2 mono text-[11px] tracking-[0.12em] font-semibold hover:bg-red-dark transition-colors">ANALYZE ⇢</button>
+        </form>
+        <p class="mono text-[10px] tracking-[0.18em] text-muted mt-3 fade-up" style="animation-delay:0.32s">
+            FREE · NO SIGNUP · ~14 SECONDS
+        </p>
+
+        {# Trust stats #}
+        <div class="mt-14 pt-6 border-t border-line flex flex-wrap gap-10 fade-up" style="animation-delay:0.4s">
+            {% for n, l in [
+                ('2,418', 'COMPS INDEXED'),
+                ('11',    'SOURCES'),
+                ('$0.4M', 'AVG SOLD PRICE'),
+                ('±4.1%', 'EST. ERROR'),
+            ] %}
+            <div>
+                <div class="display font-bold text-[32px] leading-none">{{ n }}</div>
+                <div class="mono text-[9px] tracking-[0.2em] text-muted mt-1.5">{{ l }}</div>
+            </div>
+            {% endfor %}
         </div>
     </div>
+
+    {# RIGHT — sample report visual #}
+    <div class="relative fade-up" style="animation-delay:0.3s">
+        {# Image plate — striped placeholder; swap src to drop in a hero photo #}
+        <div class="relative h-[300px] overflow-hidden"
+             style="background:#1a1815; background-image:repeating-linear-gradient(135deg,#1a1815 0 14px,#3a352c 14px 15px);">
+            <p class="mono absolute top-3 left-4 text-[9px] tracking-[0.2em] text-[#7a7468]">HERO · LATEST DEAL</p>
+            <p class="mono absolute bottom-3 right-4 text-[9px] tracking-[0.2em] text-[#7a7468]">IMG · DROP IN</p>
+            <div class="absolute bottom-3 left-4 w-16 h-0.5 bg-red"></div>
+            <div class="absolute top-5 right-5 flex flex-col gap-1.5 items-end">
+                <span class="mono bg-red text-white px-2 py-1 text-[10px] tracking-[0.15em] font-semibold">LIVE</span>
+                <span class="mono text-[9px] tracking-[0.2em] text-[#9a9382]">2019 · 991.2</span>
+            </div>
+        </div>
+
+        {# Floating verdict card #}
+        <div class="bg-paper2 px-6 py-5 -mt-7 ml-6 mr-14 relative" style="border-top:3px solid #d5001c">
+            <p class="mono text-[10px] tracking-[0.2em] text-muted">LATEST ANALYSIS · 12 MIN AGO</p>
+            <p class="display font-bold text-[30px] leading-[1.05] mt-1.5">Strong value, under market</p>
+            <div class="flex flex-wrap gap-6 mt-3.5 items-baseline">
+                <div>
+                    <div class="mono text-[9px] tracking-[0.18em] text-muted">ASK</div>
+                    <div class="mono text-[22px] font-semibold">$112,500</div>
+                </div>
+                <div>
+                    <div class="mono text-[9px] tracking-[0.18em] text-muted">EST. MARKET</div>
+                    <div class="mono text-[22px] font-semibold">$118 – 126K</div>
+                </div>
+                <div>
+                    <div class="mono text-[9px] tracking-[0.18em] text-muted">Δ</div>
+                    <div class="mono text-[22px] font-bold text-ok">−$8.2K</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 ml-6 grid grid-cols-2 gap-2.5">
+            <div class="bg-paper border border-line px-4 py-3">
+                <div class="mono text-[9px] tracking-[0.2em] text-muted">CLOSE COMPS</div>
+                <div class="display text-[26px] font-bold leading-none mt-1">18</div>
+            </div>
+            <div class="bg-paper border border-line px-4 py-3">
+                <div class="mono text-[9px] tracking-[0.2em] text-muted">CONFIDENCE</div>
+                <div class="display text-[26px] font-bold leading-none mt-1">HIGH</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# Racing tape divider #}
+<div class="max-w-6xl mx-auto px-8 py-2">
+    <div class="race-tape"><div></div><div></div><div></div></div>
 </div>
+{% endblock %}
+
+{% block content %}
+
+{# How it works #}
+<section id="how" class="max-w-6xl mx-auto px-8 py-16">
+    <div class="grid grid-cols-1 md:grid-cols-[0.5fr_2fr] gap-14 mb-8">
+        <p class="eyebrow" data-reveal>Method</p>
+        <h2 class="display font-bold text-[48px] leading-none m-0" data-reveal>Three steps. No fluff.</h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 border-t border-line">
+        {% for n, t, d in [
+            ('01', 'Drop a listing URL', 'BaT, Cars & Bids, PCA Mart, Cars.com, AutoTrader, CarGurus, Porsche CPO. Or paste raw text from anywhere.'),
+            ('02', 'We extract & match',  'Year, generation, trim, transmission, mileage, color, options, VIN — pulled and normalized. Then ranked against 2,400+ comps.'),
+            ('03', 'Verdict in plain English', 'Sold range. Active-asking range. Confidence. Risk flags. Negotiation posture. The reasoning. No black box.'),
+        ] %}
+        <div class="px-7 py-8 border-r border-line last:border-r-0" data-reveal data-delay="{{ loop.index0 * 100 }}">
+            <div class="mono text-[11px] text-red tracking-[0.2em] font-semibold">STEP {{ n }}</div>
+            <h3 class="display font-bold text-[28px] leading-[1.1] mt-3.5">{{ t }}</h3>
+            <p class="text-[14px] text-ink2 leading-relaxed mt-3.5">{{ d }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+{# Coverage matrix #}
+<section id="coverage" class="max-w-6xl mx-auto px-8 pb-16">
+    <div class="grid grid-cols-1 md:grid-cols-[0.5fr_2fr] gap-14 mb-8">
+        <p class="eyebrow" data-reveal>Coverage</p>
+        <h2 class="display font-bold text-[48px] leading-none m-0" data-reveal>What we cover, where we don't.</h2>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-6 border border-line">
+        {% for gen, years, status, n in [
+            ('992.2', "'24 →",   'partial', 64),
+            ('992.1', "'20–'23", 'live',    612),
+            ('991.2', "'17–'19", 'live',    891),
+            ('991.1', "'12–'16", 'planned', 0),
+            ('GT3',   'all',     'planned', 0),
+            ('997 / EARLIER', 'classic', 'roadmap', 0),
+        ] %}
+        {% set live = status == 'live' %}
+        {% set partial = status == 'partial' %}
+        <div class="px-5 py-6 border-r border-line last:border-r-0 {% if live %}bg-paper2{% else %}bg-paper{% endif %} {% if not live and not partial %}opacity-45{% endif %}" data-reveal data-delay="{{ loop.index0 * 60 }}">
+            <div class="mono text-[9px] tracking-[0.2em] font-semibold {% if live %}text-red{% else %}text-muted{% endif %}">
+                {{ status | upper }}
+            </div>
+            <div class="display font-bold text-[30px] leading-none mt-2">{{ gen }}</div>
+            <div class="mono text-[11px] text-muted mt-1">{{ years }}</div>
+            <div class="mono text-[11px] text-ink2 mt-4">{% if n %}{{ n }} comps{% else %}—{% endif %}</div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+{# Bottom CTA #}
+<section class="border-t border-line bg-paper2">
+    <div class="max-w-6xl mx-auto px-8 py-16 flex flex-wrap items-center justify-between gap-8" data-reveal>
+        <div>
+            <p class="eyebrow">Ready when you are</p>
+            <h2 class="display font-bold text-[40px] leading-[1.05] mt-3">Drop a 911. Get a verdict.</h2>
+            <p class="text-[14px] text-ink2 mt-2">Average analysis time · 14 seconds.</p>
+        </div>
+        <a href="/submit" class="btn-primary">Analyze a listing ⇢</a>
+    </div>
+</section>
+
 {% endblock %}
